@@ -8,19 +8,17 @@ var http = require('request'),
 
 program
     .version('0.0.1')
-    .option('-z, --zipcode', 'Zipcode')
+    .option('-z, --zipcode [zipcode]', 'Zipcode')
     .option('-t, --type', 'Report Type')
     .parse(process.argv);
 
 const API_KEY = "134ef56af179720e";
 
 var args = {};
-
 // check for rc file
 var readConfig = new Promise(function(resolve, reject) {
     var homeDir = process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME'];
     fs.readFile(homeDir + "/.weather.json","utf-8", function (err, data) {
-        debugger;
         if (typeof(data) === "undefined" || program.zipcode) {
             reject();
             return;
@@ -55,13 +53,13 @@ readConfig.then(function(config) {
         process.exit(1);
     }
 
+    debugger;
     makeRequest({ url: buildURL(args), type: argv.reportType });
 });
 
-
-
 function makeRequest(options) { 
     http.get(options, function(error, response, body) {
+        debugger;
         var jsonBody = JSON.parse(body),
             reportType = options.reportType || "conditions",
             fieldMap = fieldMaps()[reportType];
