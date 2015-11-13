@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "JSONPath": "^0.10.0",
+    "commander": "^2.9.0",
     "request": "^2.65.0",
     "yargs": "^3.29.0"
   }

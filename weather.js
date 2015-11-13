@@ -1,21 +1,27 @@
 #!/usr/bin/env node
 
 var http = require('request'),
-    argv = require('yargs').argv,
     jsonPath = require('JSONPath'),
     lang = require('./lang/en_US'),
-    fs  = require('fs');
+    fs  = require('fs'),
+    program = require('commander');
+
+program
+    .version('0.0.1')
+    .option('-z, --zipcode', 'Zipcode')
+    .option('-t, --type', 'Report Type')
+    .parse(process.argv);
 
 const API_KEY = "134ef56af179720e";
 
 var args = {};
 
 // check for rc file
-
 var readConfig = new Promise(function(resolve, reject) {
     var homeDir = process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME'];
     fs.readFile(homeDir + "/.weather.json","utf-8", function (err, data) {
-        if (typeof(data) === "undefined") {
+        debugger;
+        if (typeof(data) === "undefined" || program.zipcode) {
             reject();
             return;
         }
@@ -27,7 +33,7 @@ var readConfig = new Promise(function(resolve, reject) {
             location: jsonData.zipcode,
             reportType: jsonData.reportType
         });
-    });
+     });
 });
 
 readConfig.then(function(config) {
@@ -39,8 +45,9 @@ readConfig.then(function(config) {
     makeRequest({ url: buildURL(config), reportType: config.reportType });
 
 }, function() {
-    if (argv.zipcode) {
-        args.location = argv.zipcode;
+    debugger;
+    if (program.zipcode) {
+        args.location = program.zipcode;
     }
 
     if (!args.location) {
@@ -49,8 +56,9 @@ readConfig.then(function(config) {
     }
 
     makeRequest({ url: buildURL(args), type: argv.reportType });
-
 });
+
+
 
 function makeRequest(options) { 
     http.get(options, function(error, response, body) {
@@ -87,6 +95,3 @@ function fieldMaps() {
         ]
     };
 }
-
-
-
