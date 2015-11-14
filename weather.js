@@ -9,7 +9,7 @@ var http = require('request'),
 program
     .version('0.0.1')
     .option('-z, --zipcode [zipcode]', 'Zipcode')
-    .option('-t, --type', 'Report Type')
+    .option('-t, --type [type]', 'Report Type')
     .parse(process.argv);
 
 const API_KEY = "134ef56af179720e";
@@ -43,7 +43,6 @@ readConfig.then(function(config) {
     makeRequest({ url: buildURL(config), reportType: config.reportType });
 
 }, function() {
-    debugger;
     if (program.zipcode) {
         args.location = program.zipcode;
     }
@@ -53,13 +52,11 @@ readConfig.then(function(config) {
         process.exit(1);
     }
 
-    debugger;
-    makeRequest({ url: buildURL(args), type: argv.reportType });
+    makeRequest({ url: buildURL(args), type: program.type });
 });
 
 function makeRequest(options) { 
     http.get(options, function(error, response, body) {
-        debugger;
         var jsonBody = JSON.parse(body),
             reportType = options.reportType || "conditions",
             fieldMap = fieldMaps()[reportType];
