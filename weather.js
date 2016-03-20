@@ -8,8 +8,9 @@ var http = require('request'),
 
 program
     .version('0.0.1')
-    .option('-z, --zipcode [zipcode]', 'Zipcode')
-    .option('-t, --type [type]', 'Report Type')
+    .option('-q, --query [query]', 'Query - "44708", "Canton,OH", etc')
+    .option('-t, --type [type]', 'Report Type (conditions|)')
+    .option('-r, --raw', 'Raw JSON output')
     .parse(process.argv);
 
 const API_KEY = "134ef56af179720e";
@@ -19,61 +20,70 @@ var args = {};
 var readConfig = new Promise(function(resolve, reject) {
     var homeDir = process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME'];
     fs.readFile(homeDir + "/.weather.json","utf-8", function (err, data) {
-        if (typeof(data) === "undefined" || program.zipcode) {
+        debugger;
+        if (typeof(data) === "undefined" || program.query) {
             reject();
             return;
         }
 
         var jsonData = JSON.parse(data);
-        args.location = jsonData.zipcode;
-
-        resolve({
-            location: jsonData.zipcode,
-            reportType: jsonData.reportType
-        });
-     });
+        resolve(jsonData);
+    });
 });
 
 readConfig.then(function(config) {
-    if (!config.location) {
-        console.log("A location is required");
+    if (!config.query) {
+        console.log("A location query is required");
         process.exit(1);
     }
-
-    makeRequest({ url: buildURL(config), reportType: config.reportType });
+    
+    var requestArgs = config;
+    requestArgs.url = buildURL(config);
+    makeRequest(requestArgs);
 
 }, function() {
-    if (program.zipcode) {
-        args.location = program.zipcode;
-    }
-
-    if (!args.location) {
-        console.log("A location is required");
+    if (!program.query) {
+        console.log("A location query is required");
         process.exit(1);
     }
 
-    makeRequest({ url: buildURL(args), type: program.type });
+    var requestArgs = program;
+    requestArgs.url = buildURL(requestArgs);
+    makeRequest(requestArgs);
 });
 
 function makeRequest(options) { 
     http.get(options, function(error, response, body) {
         var jsonBody = JSON.parse(body),
-            reportType = options.reportType || "conditions",
+            reportType = options.type || "conditions",
             fieldMap = fieldMaps()[reportType];
 
-        fieldMap.forEach(function(field) {
-            console.log(lang[field] + ": " + jsonPath.eval(jsonBody, field)[0]);
-        });
+        if (options.raw) {
+            console.log(body);
+        } else {
+            fieldMap.forEach(function(field) {
+                console.log(lang[field] + ": " + jsonPath.eval(jsonBody, field)[0]);
+            });
+        }
     });
 }
 
 function buildURL(args) {
     var baseURL = "http://api.wunderground.com/api/" + API_KEY,
-        endPoint = args.dataPoint || "conditions",
-        location = args.location,
-        responseType = args.responseType || "json";
+        endPoint = args.type || "conditions",
+        location = args.query,
+        responseType = args.responseType || "json",
+        url = `${baseURL}/${endPoint}/q/${location}.${responseType}`;
 
-    return `${baseURL}/${endPoint}/q/${location}.${responseType}`;
+    logDebug(url);
+
+    return url; 
+}
+
+function logDebug(out) {
+    if (process.env.DEBUG) {
+        console.log('\033[0;33mDEBUG: ' + out + '\033[0m');
+    }
 }
 
 // JSONPath field
